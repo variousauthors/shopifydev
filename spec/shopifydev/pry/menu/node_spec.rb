@@ -13,7 +13,10 @@ end
 describe "Shopifydev::Pry::Menu::ChoiceNode" do
 
   describe "#draw" do
-    it "displays a yellow number and a choice"
+    it "displays a yellow number and a choice" do
+      node = ChoiceNode.new("Choice", 0)
+      expect(node.draw).to eq(Color.yellow{ 0.to_s } + '. ' + "Choice")
+    end
   end
 end
 

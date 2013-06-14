@@ -233,6 +233,7 @@ end
 
 class ConfigMenu
   attr_accessor :json
+  include Shopifydev::Pry::Menu
 
   def initialize(json, style=:default)
     @json = json
