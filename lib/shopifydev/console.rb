@@ -1,4 +1,6 @@
+require 'pry'
 require 'shopifydev/pry/commands'
+require 'shopifydev/pry/menu/node'
 require 'shopifydev/pry/save_json'
 require 'shopifydev/shopify_api/caches'
 

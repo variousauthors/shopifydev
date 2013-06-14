@@ -35,5 +35,8 @@ Gem::Specification.new do |gem|
 
   # for fixtures
   gem.add_dependency 'ffaker'
+
+  # for tests
+  gem.add_development_dependency "rspec"
   
 end
