@@ -271,22 +271,33 @@ class ConfigMenu
   # instead of having infinite build_something methods, maybe we should have
   # a way of passing in blocks, or something?
   def build_default
-    header("Test Shops")
-    json[:test_shops].keys.each do |k|
-      choice([:test_shops, k], k)
+    # make three nodes and call draw on them
+    @lines << HeaderNode.new("Test Shops").draw
+
+    json[:test_shops].keys.each do |value|
+      node = ChoiceNode.new(value, @choices.length)
+      @lines << node.draw
+      @choices[node.index] = [:test_shops, value]
     end
 
-    header("Local Apps")
-    json[:apps][:development].each do |k, path|
+    @lines << HeaderNode.new("Local Apps").draw
+
+    json[:apps][:development].each do |key, path|
       if Pathname(path).expand_path == Pathname.getwd
         path = Color.green{ path }
       end
-      choice([:apps, :development, k], path)
+
+      node = ChoiceNode.new(path, @choices.length)
+      @lines << node.draw
+      @choices[node.index] = [:apps, :development, key]
     end
 
-    header("Heroku Apps")
-    json[:apps][:heroku].each do |k, name|
-      choice([:apps, :heroku, k], name)
+    @lines << HeaderNode.new("Heroku Apps").draw
+
+    json[:apps][:heroku].each do |key, name|
+      node = ChoiceNode.new(name, @choices.length)
+      @lines << node.draw
+      @choices[node.index] = [:apps, :heroku, key]
     end
 
     self
