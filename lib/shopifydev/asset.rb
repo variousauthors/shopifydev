@@ -54,5 +54,35 @@ module Shopifydev
       end
       puts "---"
     end
+
+    def download
+      response = ShopifyAPI::Asset.find(@remote_key) # get the asset
+      file = Pathname.new(response.attributes["key"])
+
+      directory_path = Pathname.new(@shop.project_root +
+                                 File::Separator +
+                                 file.dirname.to_path)
+
+      directory_path.mkpath unless (directory_path.exist?)
+
+      begin
+        puts "downloading #{file.basename}"
+        asset = get_asset(file.to_path)
+      rescue SocketError => e
+        puts e.message
+        puts "The connection was interupted while downloading #{file.to_path}."
+      end
+
+      # TODO maybe this should compare timestamps?
+      File.open((directory_path.realdirpath + file.basename).to_path, 'w') do |f|
+        puts "writing #{directory_path.to_path + File::Separator +  file.basename.to_path}"
+        f.write(asset.value)
+        puts "---"
+      end
+    end
+
+    def get_asset(key)
+      ShopifyAPI::Asset.find(key)
+    end
   end
 end

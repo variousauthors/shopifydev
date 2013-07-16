@@ -57,10 +57,10 @@ module Shopifydev
     upload(remote_keys)
   end
 
-  def upload_dir(upload_dir)
+  def upload_dir(dir)
     # upload all assets in the given dir
 
-    Dir[upload_dir + "/*"].each do |remote_key|
+    Dir[dir + "/*"].each do |remote_key|
       self.upload(remote_key)
     end
   end
@@ -73,10 +73,30 @@ module Shopifydev
     end
   end
 
-  def download(options={})
-    # Download the whole template
-
+  def download_all
     @devshop.template.download
+  end
+
+  # TODO make this work
+  def download_dir(dir)
+    Dir[dir + "/*"].each do |remote_key|
+      self.download(remote_key)
+    end
+  end
+
+  def download(remote_keys, options={})
+
+    # download the whole project
+    download_all if remote_keys.empty?
+
+    remote_keys.each do |remote_key|
+      if File.directory?(remote_key) then
+        self.download_dir(remote_key) # this doesn't work yet
+      else
+        @devshop.asset(remote_key).download
+      end
+    end
+
   end
 
   end

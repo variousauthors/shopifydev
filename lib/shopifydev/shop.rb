@@ -31,6 +31,7 @@ module Shopifydev
     end
 
     def asset(path)
+      puts "in shop asset"
       Asset.new(self, path, project_root)
     end
 
