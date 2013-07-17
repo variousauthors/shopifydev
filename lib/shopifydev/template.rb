@@ -56,10 +56,6 @@ module Shopifydev
     end
 
     def get_list_of_assets(response)
-      puts "in get_list_of_assets"
-      puts response.class
-      puts response.methods.sort
-      puts "---"
 
       response.to_a.reverse.inject({}) do | list, asset_info | 
         pathname = Pathname.new(asset_info.attributes["key"])
