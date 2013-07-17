@@ -84,7 +84,7 @@ module Shopifydev
     end
   end
 
-  def download(remote_keys, options={})
+  def download(remote_keys=[], options={})
 
     # download the whole project
     download_all if remote_keys.empty?
