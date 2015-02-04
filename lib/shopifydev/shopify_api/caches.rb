@@ -1,12 +1,8 @@
 module Shopifydev
   module ShopifyAPI
     module DirtyCache
-      def dirty!
-        ShopifyAPI.dirty!
-      end
-
       def site=(uri)
-        ShopifyAPI.dirty!
+        ::ShopifyAPI.dirty!
         super uri
       end
     end
@@ -15,29 +11,36 @@ end
 
 module ShopifyAPI
   class Base
-    include Shopifydev::ShopifyAPI::DirtyCache
+    puts "include Shopifydev::ShopifyAPI::DirtyCache"
+    extend Shopifydev::ShopifyAPI::DirtyCache
   end
 end
 
 module ShopifyAPI
+  class VariantWithProduct < Base
+    self.prefix = "/admin/"
+    self.element_name = "variant"
+    self.collection_name = "variants"
+  end
+
   class << self
 
     def cache_status(cache, show_opts=false)
       dirty?
       subset = ''
       opts = ''
-      length = Color.black{'unloaded'}
+      length = TColor.black{'unloaded'}
       since = ''
       unless cache.nil?
         if !show_opts && (cache.params.keys.to_set != Set[:limit])
-          subset = Color.red('!')
+          subset = TColor.red('!')
         end
         if show_opts
-          opts = cache.params.map{|k, v| Color.magenta{k.to_s} + Color.black{':'} + Color.green{v.to_s}}.join(Color.black{', '})
+          opts = cache.params.map{|k, v| TColor.magenta{k.to_s} + TColor.black{':'} + TColor.green{v.to_s}}.join(TColor.black{', '})
           opts = "\n  #{opts}"
         end
-        length = (cache.length > 0) ? "#{cache.length.to_s}#{subset} #{Color.black{cache.label}}" : 'empty'
-        since = "#{Color.black{'on:'}}#{cache.since.strftime("%a %H:%M:%S")}"
+        length = (cache.length > 0) ? "#{cache.length.to_s}#{subset} #{TColor.black{cache.label}}" : 'empty'
+        since = "#{TColor.black{'on:'}}#{cache.since.strftime("%a %H:%M:%S")}"
       end
       "#{length.ljust(18)} #{since}#{opts}"
     end
@@ -46,13 +49,13 @@ module ShopifyAPI
       return if warn_site
       dirty?
       puts <<-EOF
-#{Color.blue{'products'}}:           #{cache_status(@@products, show_opts)}
-#{Color.blue{'variants'}}:           #{cache_status(@@variants, show_opts)}
-#{Color.blue{'metafields'}}:         #{cache_status(@@metafields, show_opts)}
-#{Color.blue{'orders'}}:             #{cache_status(@@orders, show_opts)}
-#{Color.blue{'customers'}}:          #{cache_status(@@customers, show_opts)}
-#{Color.blue{'custom_collections'}}: #{cache_status(@@custom_collections, show_opts)}
-#{Color.blue{'smart_collections'}}:  #{cache_status(@@smart_collections, show_opts)}
+#{TColor.blue{'products'}}:           #{cache_status(@@products, show_opts)}
+#{TColor.blue{'variants'}}:           #{cache_status(@@variants, show_opts)}
+#{TColor.blue{'metafields'}}:         #{cache_status(@@metafields, show_opts)}
+#{TColor.blue{'orders'}}:             #{cache_status(@@orders, show_opts)}
+#{TColor.blue{'customers'}}:          #{cache_status(@@customers, show_opts)}
+#{TColor.blue{'custom_collections'}}: #{cache_status(@@custom_collections, show_opts)}
+#{TColor.blue{'smart_collections'}}:  #{cache_status(@@smart_collections, show_opts)}
 EOF
     end
 
@@ -87,7 +90,12 @@ EOF
         self.replace(entity.find(:all, params: self.params))
         self.since = Time.now
         puts "#{self.length} records."
-        nil
+        self
+      }}
+      obj.singleton_class.class_eval{define_method(:delete_all) {
+        puts "deleting all #{entity.collection_name}..."
+        self.each{|e| entity.delete(e.id)}
+        self.r
       }}
     end
 
@@ -111,7 +119,7 @@ EOF
         obj.r(msg)
       elsif (obj.params != opts)
         msg = "reloading #{entity.collection_name} with new params..."
-        obj.params = opts
+        obj.params = opts.merge({limit: false})
         obj.r(msg)
       end
       obj
@@ -127,7 +135,7 @@ EOF
     def variants(opts={limit: 250})
       return if warn_site
       @@variants ||= nil
-      @@variants = fetch_cache(ShopifyAPI::Variant, opts, @@variants)
+      @@variants = fetch_cache(ShopifyAPI::VariantWithProduct, opts, @@variants)
       @@variants
 
     end

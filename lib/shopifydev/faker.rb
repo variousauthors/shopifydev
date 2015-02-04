@@ -5,20 +5,25 @@ module Shopifydev
     extend ::Faker::ModuleUtils
     extend self
 
+    NL = "\n"
+
 
     def metafield(owner=nil, opts={})
       owner_resource = owner && owner.class.element_name 
       owner_id = owner && owner.id
       metafield = ::ShopifyAPI::Metafield.new(
       {
-        owner_resource: owner_resource,
-        owner_id: owner_id,
         namespace: opts[:namespace] || namespace,
         key: opts[:key] || key,
         value_type: 'string',
         value: opts[:value] || value
       }
       )
+      unless owner.is_a?(::ShopifyAPI::Shop)
+        metafield.owner_resource = owner_resource
+        metafield.owner_id = owner_id
+      end
+
       metafield.save! if owner_id
       metafield
     end
@@ -38,11 +43,98 @@ module Shopifydev
     end
 
     def key
-      ::Faker::Lorem.word.downcase
+      k = ""
+      while((k = ::Faker::Lorem.word).length < 3);end
+      k.downcase
     end
 
     def value
-      ::Faker::Lorem.sentence(rand(10))
+      ::Faker::Lorem.sentence(rand(10) + 1)
+    end
+
+    def csv_value
+      value.gsub('"','').gsub(',', '')[0..-2]
+    end
+
+    def metafield_import_csv(resources, opts={})
+      opts[:import_type] ||= :product_variant_multikey
+      opts[:num] ||= 1
+      opts[:namespace] ||= namespace
+      opts[:keys] ||= [key]
+      opts[:keys] = [opts[:keys]].flatten
+
+      resources = [resources].flatten
+
+      out = ""
+
+      while(opts[:keys].length < opts[:num]); opts[:keys] << key; end
+      puts "opts: #{opts.inspect}" if opts[:verbose]
+
+      case opts[:import_type]
+      when :owner_resource
+      when :product_handle
+      when :product_variant_sku
+      when :product_variant_multikey
+        out = %w{sku namespace} 
+        out += opts[:keys]
+        out = out.join(',')
+        out << NL
+
+        resources.each do |resource|
+          line = [resource.sku, opts[:namespace]]
+          values = opts[:values]
+          values ||= [csv_value]
+          values = [values].flatten
+          while(values.length < opts[:num]); values << csv_value; end
+          line += values
+          out << line.join(',')
+          out << NL
+        end
+      else
+        raise "don't know how to create import csv for #{opts[:type].to_s}"
+      end
+
+      if opts[:file]
+        opts[:file] << ".csv" unless opts[:file].include?('.csv')
+        File.open(opts[:file], 'w') { |file|
+          file.write(out)
+        }
+        puts "wrote #{out.lines.to_a.length - 1} records to #{opts[:file]}"
+        nil
+      else
+        out
+      end
+    end
+
+    def product(opts={})
+      num = opts.delete(:num) || 1
+      verbose = opts.delete(:verbose)
+      defaults = {
+        
+      }
+      1.upto(num) do i
+        interpolated_opts = defaults.merge(opts).deep_dup
+        interpolated_opts.deep_merge!(interpolated_opts){|key,v1| v1.gsub('###INDEX###', i)}
+        product = ::ShopifyAPI::Product.create(interpolated_opts)
+        puts "created #{product}" if verbose
+      end
+    end
+
+    def orders
+      num = opts.delete(:num) || 5
+    end
+    
+    def order
+      verbose = opts.delete(:verbose)
+      defaults = {
+        
+      }
+      1.upto(num) do i
+        interpolated_opts = defaults.merge(opts).deep_dup
+        interpolated_opts.deep_merge!(interpolated_opts){|key,v1| v1.gsub('###INDEX###', i)}
+        product = ::ShopifyAPI::Product.create(interpolated_opts)
+        puts "created #{product}" if verbose
+      end
     end
 
   end
